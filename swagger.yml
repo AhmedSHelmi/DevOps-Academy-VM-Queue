@@ -1,0 +1,142 @@
+openapi: 3.0.0
+info:
+  title: Orange VM creator Queue API
+  description: This API allows users to manage VMs and jobs with authentication using JWT.
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000
+    description: Local server
+
+paths:
+  /register:
+    post:
+      summary: Register a new user
+      description: Register a new user with a username and password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: testuser
+                password:
+                  type: string
+                  example: testpass
+      responses:
+        '201':
+          description: User registered successfully
+        '400':
+          description: Invalid input or username already exists
+
+  /login:
+    post:
+      summary: Login a user
+      description: Authenticate a user and return a JWT token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: testuser
+                password:
+                  type: string
+                  example: testpass
+      responses:
+        '200':
+          description: User authenticated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: your_jwt_token_here
+        '401':
+          description: Authentication failed
+        '400':
+          description: Invalid input
+
+  /request-vm:
+    post:
+      summary: Request VM creation
+      description: Request the creation of a VM, which returns an automation key in the response headers.
+      responses:
+        '200':
+          description: VM request received
+          headers:
+            Automation-Key:
+              schema:
+                type: string
+                example: 123e4567-e89b-12d3-a456-426614174000
+        '403':
+          description: Unauthorized
+        '400':
+          description: Invalid input
+
+  /create-job:
+    post:
+      summary: Create a job
+      description: Create a job using the automation key and set its status to IN_PROGRESS.
+      parameters:
+        - in: header
+          name: Automation-Key
+          schema:
+            type: string
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+      responses:
+        '200':
+          description: Job created with status IN_PROGRESS
+        '403':
+          description: Unauthorized
+        '400':
+          description: Invalid input or invalid automation key
+
+  /job-status:
+    get:
+      summary: Get job status
+      description: Retrieve the status of a job using the automation key.
+      parameters:
+        - in: header
+          name: Automation-Key
+          schema:
+            type: string
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+      responses:
+        '200':
+          description: Job status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: DONE
+                  message:
+                    type: string
+                    example: 
+                      VM created: testuser_vm_20210623123045
+        '403':
+          description: Unauthorized
+        '400':
+          description: Invalid input or invalid automation key
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []
